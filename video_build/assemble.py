@@ -10,17 +10,26 @@ safe = {p["num"]: p["name"].split(" (")[0].replace("&", "and").replace("+", "and
 def clip(s):
     png, wav = s["html"].replace(".html", ".png"), s["html"].replace(".html", ".wav")
     mp4 = s["html"].replace(".html", ".mp4")
+    done = mp4 + ".ok"
     dur = float(subprocess.check_output(["ffprobe", "-v", "quiet", "-show_entries", "format=duration",
                                          "-of", "csv=p=0", wav]).decode()) + 1.6
+    if os.path.exists(done):
+        return mp4, dur
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-framerate", "12", "-i", png, "-i", wav,
         "-af", "adelay=500|500,apad", "-t", f"{dur:.2f}", "-c:v", "libx264", "-tune", "stillimage",
         "-preset", "veryfast", "-crf", "26", "-g", "120", "-pix_fmt", "yuv420p", "-r", "12",
         "-c:a", "aac", "-b:a", "96k", "-ar", "44100", "-ac", "1", mp4], check=True)
+    open(done, "w").close()
     return mp4, dur
 
+ONLY = [int(x) for x in sys.argv[3].split(",")] if len(sys.argv) > 3 else None
+if ONLY:
+    manifest = [s for s in manifest if s["part"] in ONLY]
 with ThreadPoolExecutor(4) as ex: results = list(ex.map(clip, manifest))
 total_all, all_list = 0, []
 for p in PARTS:
+    if ONLY and p["num"] not in ONLY:
+        continue
     items = [(r, s) for r, s in zip(results, manifest) if s["part"] == p["num"]]
     lst = os.path.join(os.path.dirname(items[0][1]["html"]), "list.txt")
     open(lst, "w").write("".join(f"file '{r[0]}'\n" for r, _ in items))
@@ -29,6 +38,8 @@ for p in PARTS:
                     "-c", "copy", "-movflags", "+faststart", out], check=True)
     d = sum(r[1] for r, _ in items); total_all += d; all_list += [r[0] for r, _ in items]
     print(f"{os.path.basename(out)}  {d/60:.1f} min  {os.path.getsize(out)/1e6:.1f} MB")
+if ONLY:
+    sys.exit(0)
 lst = os.path.join(os.path.dirname(sys.argv[1]), "all.txt")
 open(lst, "w").write("".join(f"file '{f}'\n" for f in all_list))
 out = os.path.join(outdir, "FULL_COURSE_All_Parts.mp4")
