@@ -203,3 +203,8 @@ doc = f'<!doctype html><html><head><meta charset="utf-8"><title>SQL Queries with
 src = os.path.join(TMP, "4_SQL_Queries_With_Outputs.html"); open(src, "w").write(doc)
 json.dump([[src, os.path.join(ROOT, "pdf", "4_SQL_Queries_With_Outputs.pdf")]], open(os.path.join(TMP, "outjobs.json"), "w"))
 print("items:", sum(len(i) for _, i in results))
+
+# machine-readable results for the video builder
+json.dump({"videos": [[v["num"], [[t, n, d, s] for t, n, d, s in items]] for v, items in results],
+           "java_ok": java_ok, "java_bad": textwrap.fill(java_bad, 62)},
+          open(os.path.join(TMP, "results.json"), "w"))

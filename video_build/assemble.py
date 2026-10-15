@@ -14,7 +14,7 @@ def clip(s):
                                          "-of", "csv=p=0", wav]).decode()) + 1.6
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-framerate", "12", "-i", png, "-i", wav,
         "-af", "adelay=500|500,apad", "-t", f"{dur:.2f}", "-c:v", "libx264", "-tune", "stillimage",
-        "-preset", "medium", "-crf", "26", "-g", "120", "-pix_fmt", "yuv420p", "-r", "12",
+        "-preset", "veryfast", "-crf", "26", "-g", "120", "-pix_fmt", "yuv420p", "-r", "12",
         "-c:a", "aac", "-b:a", "96k", "-ar", "44100", "-ac", "1", mp4], check=True)
     return mp4, dur
 

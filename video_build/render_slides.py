@@ -77,6 +77,13 @@ li.compact{font-size:33px;padding:16px 28px}
 .title-wrap .kicker{font-size:34px;color:#22d3ee;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:26px}
 .title-wrap h1{font-size:110px;line-height:1.05;margin-bottom:36px}
 .title-wrap .sub{font-size:42px;color:#b6c2d9;line-height:1.35;max-width:1500px}
+
+.term{flex:1;background:#0b1020;border:1px solid #26314a;border-radius:18px;padding:26px 34px;font-family:'DejaVu Sans Mono',monospace;white-space:pre;overflow:hidden;color:#cbd5e1}
+.term .prompt{color:#a78bfa;font-weight:700}.term .cont{color:#64748b}.term .res{color:#e2e8f0}.term .err{color:#fca5a5}
+.term .ok{color:#86efac}
+.term .tag{color:#f472b6;background:none;padding:0;font-size:inherit;font-weight:400}
+.tag.out{background:#86efac}
+.notebox{position:absolute;left:70px;right:70px;bottom:78px;background:#0e2a33;border-left:6px solid #22d3ee;border-radius:12px;padding:16px 24px;font-size:30px;line-height:1.35;color:#cffafe}
 """
 
 def code_font(code, has_steps):
@@ -87,12 +94,34 @@ def code_font(code, has_steps):
     fs = min(40, width / (0.602 * maxlen), height / (1.42 * len(lines)))
     return round(fs, 1)
 
+
+def term_html(steps):
+    parts, lines = [], 0
+    for disp, out in steps:
+        hl = highlight(disp).split("\n")
+        parts.append('<span class="prompt">mysql&gt; </span>' + hl[0] + "".join("\n<span class=\"cont\">    -&gt; </span>" + l for l in hl[1:]))
+        lines += len(hl)
+        if out is not None:
+            cls = "err" if out.startswith(("ERROR", "XML is INVALID")) else ("ok" if out.startswith(("Query OK", "Database", "XML is VALID")) else "res")
+            parts.append(f'<span class="{cls}">{html.escape(out)}</span>')
+            lines += out.count("\n") + 1
+    text_lines = [l for p in parts for l in re.sub(r"<[^>]+>", "", p).split("\n")]
+    return "\n".join(parts), len(text_lines), max(len(html.unescape(l)) for l in text_lines)
+
 def page(part, idx, total, s):
     foot = (f'<div class="foot"><span>SQL Lab Exam Crash Course · Part {part["num"]}: {html.escape(part["name"])}</span>'
             f'<span>{idx+1} / {total}</span></div><div class="bar" style="width:{(idx+1)/total*100:.2f}%"></div>')
     if s["kind"] == "title":
         inner = (f'<div class="title-wrap"><div class="kicker">Part {part["num"]} of {len(PARTS)}</div>'
                  f'<h1>{html.escape(s["title"])}</h1><div class="sub">{html.escape(s["sub"])}</div></div>')
+    elif s["kind"] == "output":
+        body, nlines, maxlen = term_html(s["steps"])
+        note_h = 120 if s.get("note") else 0
+        height = 850 - note_h - 52
+        fs = round(min(34, 1730 / (0.602 * maxlen), height / (1.3 * nlines)), 1)
+        note = f'<div class="notebox">{html.escape(s["note"])}</div>' if s.get("note") else ""
+        inner = (f'<div class="hdr"><span class="tag out">OUTPUT</span><h1>{html.escape(s["title"])}</h1></div>'
+                 f'<div class="body" style="bottom:{80 + note_h}px"><div class="term" style="font-size:{fs}px;line-height:1.3">{body}</div></div>{note}')
     else:
         code = s.get("code")
         steps = s.get("steps") or (s.get("bullets") if code else None)
