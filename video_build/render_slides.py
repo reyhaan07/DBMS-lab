@@ -2,7 +2,6 @@
 import html, json, os, re, sys
 from content import PARTS
 
-OUT = sys.argv[1] if len(sys.argv) > 1 else "out"
 
 KEYWORDS = r"""SELECT FROM WHERE GROUP BY HAVING ORDER ASC DESC AND OR NOT IN IS NULL LIKE BETWEEN AS ON
 JOIN LEFT RIGHT INNER CROSS UNION CREATE TABLE DATABASE USE SHOW TABLES DESC INSERT INTO VALUES UPDATE SET
@@ -114,13 +113,18 @@ def page(part, idx, total, s):
                  f'<div class="body">{left}{right}</div>')
     return f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}</style></head><body><div class="top"></div>{inner}{foot}</body></html>'
 
-manifest = []
-for p in PARTS:
-    d = os.path.join(OUT, f"part{p['num']}")
-    os.makedirs(d, exist_ok=True)
-    for i, s in enumerate(p["slides"]):
-        fn = os.path.join(d, f"s{i:02d}.html")
-        open(fn, "w").write(page(p, i, len(p["slides"]), s))
-        manifest.append({"part": p["num"], "i": i, "html": os.path.abspath(fn), "say": s["say"]})
-json.dump(manifest, open(os.path.join(OUT, "manifest.json"), "w"), indent=1)
-print(len(manifest), "slides")
+def main():
+    OUT = sys.argv[1] if len(sys.argv) > 1 else 'out'
+    manifest = []
+    for p in PARTS:
+        d = os.path.join(OUT, f"part{p['num']}")
+        os.makedirs(d, exist_ok=True)
+        for i, s in enumerate(p["slides"]):
+            fn = os.path.join(d, f"s{i:02d}.html")
+            open(fn, "w").write(page(p, i, len(p["slides"]), s))
+            manifest.append({"part": p["num"], "i": i, "html": os.path.abspath(fn), "say": s["say"]})
+    json.dump(manifest, open(os.path.join(OUT, "manifest.json"), "w"), indent=1)
+    print(len(manifest), "slides")
+
+if __name__ == '__main__':
+    main()
