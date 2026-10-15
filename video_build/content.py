@@ -2,6 +2,7 @@
 # Slide kinds: title, points, code.   In code, {{x}} marks a blank you fill in.
 
 PARTS = []
+from gb_slides import GB_BEFORE, GB_AFTER_HAVING
 
 def part(num, name, slides):
     PARTS.append({"num": num, "name": name, "slides": slides})
@@ -857,3 +858,10 @@ dict(kind="points", title="Common errors → quick fix", bullets=[
 dict(kind="title", title="You've got this!", sub="Rest well · drink water · review the recap slides in the morning",
  say="That's everything. You now know every pattern in your papers. Tonight, rest and take care of your fever. Tomorrow morning, just watch the recap slides and the rapid revision part again. In the exam, read the schema, split the question into sentences, match each one to a recipe, and fill in the names. You've got this. All the best!"),
 ])
+
+# ---- extra GROUP BY explanation (Part 2)
+_p2 = PARTS[1]["slides"]
+_i = next(i for i, x in enumerate(_p2) if x["title"].startswith("RECIPE · GROUP BY"))
+_p2[_i:_i] = GB_BEFORE
+_j = next(i for i, x in enumerate(_p2) if x["title"].startswith("RECIPE · HAVING")) + 1
+_p2[_j:_j] = GB_AFTER_HAVING
